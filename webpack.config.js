@@ -44,5 +44,6 @@ module.exports = {
   devServer: {
     overlay: true,
     historyApiFallback: true
-  }
+  },
+  devtool: "eval-source-map",
 }
