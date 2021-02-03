@@ -1,6 +1,6 @@
-import { reactive, readonly } from 'vue'
+import { reactive, readonly, provide, inject } from 'vue'
 import axios from 'axios'
-import { Post } from './types'
+import { Post, User } from './types'
 
 interface PostsState {
   ids: string[]
@@ -35,24 +35,43 @@ class Store {
     return readonly(this.state)
   }
 
+  async createUser(user: User) {
+    // ...
+  }
+
+  async createPost(post: Post) {
+    const response = await axios.post<Post>('/posts', post)
+    this.state.posts.all[response.data.id] = response.data
+    this.state.posts.ids.push(response.data.id.toString())
+  }
+
   async fetchPosts() {
     const response = await axios.get<Post[]>('/posts')
-    const ids: string[] = []
-    const all: Record<string, Post> = {}
+    console.log(response.data)
     for (const post of response.data) {
-      ids.push(post.id.toString())
-      all[post.id] = post
+      if (!this.state.posts.ids.includes(post.id.toString())) {
+        this.state.posts.ids.push(post.id.toString())
+      }
+
+      this.state.posts.all[post.id] = post
     }
 
-    this.state.posts = {
-      ids,
-      all,
-      loaded: true
-    }
+    this.state.posts.loaded = true
   }
 }
 
 const store = new Store(initialState())
 store.getState()
 
-export const useStore = () => store
+export const provideStore = () => {
+  provide('store', store)
+}
+
+export const createStore = () => {
+  return new Store(initialState())
+}
+
+export const useStore = (): Store => {
+  const store = inject<Store>('store')
+  return store
+}
